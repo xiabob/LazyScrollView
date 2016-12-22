@@ -35,3 +35,22 @@ iOS 高性能异构滚动视图构建方案 —— LazyScrollView
 - (void)scrollView:(LazyScrollView *)scrollView didClickItemAtIndex:(NSUInteger)index;
 </pre>
 
+###调用核心API
+<pre>
+- (void)reloadData;
+</pre>
+
+重新走一遍DataSource的这些方法，等同于TableView中的reloadData
+<pre>
+- (UIView *)dequeueReusableItemWithIdentifier:(NSString *)identifier
+</pre>
+
+根据identifier获取可以复用的View。和TableView的dequeueReusableCellWithIdentifier:(NSString *)identifier方法意义相同。通常是在LazyScrollViewDatasource第三个方法，返回View的时候使用。
+
+<pre>
+- (void)registerClass:(Class)viewClass forViewReuseIdentifier:(NSString *)identifier
+</pre>
+
+功能和TableView的registerClass:(nullable Class)cellClass forCellReuseIdentifier:(NSString *)identifier一样
+</pre>tableView
+</pre>
