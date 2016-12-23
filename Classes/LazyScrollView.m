@@ -116,7 +116,7 @@ static char kAssociatedObjectKeyReuseIdentifier;
     [self.subviews makeObjectsPerformSelector:@selector(removeFromSuperview)];
     [self.visibleViews removeAllObjects];
     
-    [self updateAllRects];
+    [self updateAllDatas];
 }
 
 - (void)enqueueReusableView:(UIView *)view {
@@ -158,12 +158,12 @@ static char kAssociatedObjectKeyReuseIdentifier;
 #pragma mark - Utils
 
 - (CGFloat)minEdgeOffset {
-    CGFloat min = self.contentOffset.y;
+    CGFloat min = CGRectGetMinY(self.bounds);
     return MAX(min - kBufferSize, 0);
 }
 
 - (CGFloat)maxEdgeOffset {
-    CGFloat max = self.contentOffset.y + CGRectGetHeight(self.bounds);
+    CGFloat max = CGRectGetMaxY(self.bounds);
     return MIN(max + kBufferSize, self.contentSize.height);
 }
 
@@ -229,7 +229,7 @@ static char kAssociatedObjectKeyReuseIdentifier;
     return [self.allAscendingRectModels subarrayWithRange:NSMakeRange(firstIndex, lastIndex-firstIndex+1)];
 }
 
-- (void)updateAllRects {
+- (void)updateAllDatas {
     [self.allRectModels removeAllObjects];
     self.allAscendingRectModels = nil;
     self.allDescendingRectModels = nil;
@@ -241,7 +241,7 @@ static char kAssociatedObjectKeyReuseIdentifier;
         [self.allRectModels addObject:model];
     }
     
-    LSVRectModel *model = self.allRectModels.lastObject;
+    LSVRectModel *model = self.allAscendingRectModels.lastObject;
     self.contentSize = CGSizeMake(CGRectGetWidth(self.bounds), CGRectGetMaxY(model.absRect));
 }
 
