@@ -79,7 +79,7 @@ static char kAssociatedObjectKeyReuseIdentifier;
 
 - (void)layoutSubviews {
     [super layoutSubviews];
-    // TOOD: 此处算法待优化
+
     NSMutableArray *newVisibleViews = [self getVisiableViewModels].mutableCopy;
     NSMutableArray *newVisibleLsvIds = [newVisibleViews valueForKey:@"lsvId"];
     NSMutableArray *removeViews = [NSMutableArray array];
@@ -115,8 +115,9 @@ static char kAssociatedObjectKeyReuseIdentifier;
 - (void)reloadData {
     [self.subviews makeObjectsPerformSelector:@selector(removeFromSuperview)];
     [self.visibleViews removeAllObjects];
+    [self.reuseViewPool removeAllObjects];
     
-    [self updateAllDatas];
+    [self updateModelDatas];
 }
 
 - (void)enqueueReusableView:(UIView *)view {
@@ -158,11 +159,13 @@ static char kAssociatedObjectKeyReuseIdentifier;
 #pragma mark - Utils
 
 - (CGFloat)minEdgeOffset {
+    //for UIScrollView the bounds cahnge when scroll
     CGFloat min = CGRectGetMinY(self.bounds);
     return MAX(min - kBufferSize, 0);
 }
 
 - (CGFloat)maxEdgeOffset {
+    //for UIScrollView the bounds cahnge when scroll
     CGFloat max = CGRectGetMaxY(self.bounds);
     return MIN(max + kBufferSize, self.contentSize.height);
 }
@@ -174,7 +177,7 @@ static char kAssociatedObjectKeyReuseIdentifier;
     NSInteger midIndex = (minIndex + maxIndex) / 2;
     LSVRectModel *model = self.allAscendingRectModels[midIndex];
     
-    while (minIndex < maxIndex - 1) {
+    while (minIndex < midIndex && midIndex < maxIndex) {
         if (CGRectGetMinY(model.absRect) > minEdge) {
             maxIndex = midIndex;
         }
@@ -185,9 +188,14 @@ static char kAssociatedObjectKeyReuseIdentifier;
         model = self.allAscendingRectModels[midIndex];
     }
     
-    midIndex = MAX(midIndex - 1, 0);
+    //处理多个view的y值相同的情况
+    LSVRectModel *limitModel = model;
+    while (midIndex > 0 && CGRectGetMinY(model.absRect) == CGRectGetMinY(limitModel.absRect)) {
+        midIndex = MAX(midIndex - 1, 0);
+        model = self.allAscendingRectModels[midIndex];
+    }
     
-    return self.allAscendingRectModels[midIndex];
+    return model;
 }
 
 - (LSVRectModel *)findFirstDescendModelWithMaxEdge:(CGFloat)maxEdge {
@@ -197,7 +205,7 @@ static char kAssociatedObjectKeyReuseIdentifier;
     NSInteger midIndex = (minIndex + maxIndex) / 2;
     LSVRectModel *model = self.allDescendingRectModels[midIndex];
     
-    while (minIndex < maxIndex - 1) {
+    while (minIndex < midIndex && midIndex < maxIndex) {
         if (CGRectGetMaxY(model.absRect) < maxEdge) {
             maxIndex = midIndex;
         }
@@ -208,9 +216,14 @@ static char kAssociatedObjectKeyReuseIdentifier;
         model = self.allDescendingRectModels[midIndex];
     }
     
-    midIndex = MAX(midIndex - 1, 0);
+    //处理多个view的y值相同的情况
+    LSVRectModel *limitModel = model;
+    while (midIndex > 0 && CGRectGetMaxY(model.absRect) == CGRectGetMaxY(limitModel.absRect)) {
+        midIndex = MAX(midIndex - 1, 0);
+        model = self.allDescendingRectModels[midIndex];
+    }
     
-    return self.allDescendingRectModels[midIndex];
+    return model;
 }
 
 - (NSArray *)getVisiableViewModels {
@@ -222,14 +235,12 @@ static char kAssociatedObjectKeyReuseIdentifier;
     LSVRectModel *firstDescendModel = [self findFirstDescendModelWithMaxEdge:[self maxEdgeOffset]];
     
     NSInteger firstIndex = [self.allAscendingRectModels indexOfObject:firstAscendModel];
-    firstIndex = MAX(firstIndex-1, 0);
     NSInteger lastIndex  = [self.allAscendingRectModels indexOfObject:firstDescendModel];
-    lastIndex = MIN(lastIndex+1, self.allAscendingRectModels.count-1);
     
     return [self.allAscendingRectModels subarrayWithRange:NSMakeRange(firstIndex, lastIndex-firstIndex+1)];
 }
 
-- (void)updateAllDatas {
+- (void)updateModelDatas {
     [self.allRectModels removeAllObjects];
     self.allAscendingRectModels = nil;
     self.allDescendingRectModels = nil;
@@ -250,16 +261,15 @@ static char kAssociatedObjectKeyReuseIdentifier;
     CGPoint tapPoint = [gestureRecognizer locationInView:self];
     for (LSVRectModel *model in visibleViews) {
         if (CGRectContainsPoint(model.absRect, tapPoint)) {
-            if ([self.delegate respondsToSelector:@selector(scrollView:didClickItemAtIndex:)]) {
+            if ([self.delegate respondsToSelector:@selector(scrollView:didClickItemAtIndex:withLsvId:)]) {
                 NSInteger index = [self.allRectModels indexOfObject:model];
-                [self.delegate scrollView:self didClickItemAtIndex:index];
+                [self.delegate scrollView:self didClickItemAtIndex:index withLsvId:model.lsvId];
             }
             
             break;
         }
     }
 }
-
 
 #pragma mark - Setter
 
@@ -292,7 +302,13 @@ static char kAssociatedObjectKeyReuseIdentifier;
         //升序
         _allAscendingRectModels = [[self.allRectModels
                                     sortedArrayUsingComparator:^NSComparisonResult(LSVRectModel *obj1, LSVRectModel *obj2) {
-                                        return CGRectGetMinY(obj1.absRect) < CGRectGetMinY(obj2.absRect) ? NSOrderedAscending : NSOrderedDescending;}
+                                        CGFloat y1 = CGRectGetMaxY(obj1.absRect); CGFloat x1 = CGRectGetMinX(obj1.absRect);
+                                        CGFloat y2 = CGRectGetMaxY(obj2.absRect); CGFloat x2 = CGRectGetMinX(obj2.absRect);
+                                        if (y1 == y2) {
+                                            return x1 <= x2 ? NSOrderedAscending: NSOrderedDescending;
+                                        } else {
+                                            return y1 < y2 ? NSOrderedAscending : NSOrderedDescending;
+                                        } }
                                     ] mutableCopy];
     }
     
@@ -304,7 +320,14 @@ static char kAssociatedObjectKeyReuseIdentifier;
         //需要降序，而sortedArrayUsingComparator的结果是ascending order，所以block里面的结果是相反的。
         _allDescendingRectModels = [[self.allRectModels
                                      sortedArrayUsingComparator:^NSComparisonResult(LSVRectModel *obj1, LSVRectModel *obj2) {
-                                         return CGRectGetMaxY(obj1.absRect) < CGRectGetMaxY(obj2.absRect) ? NSOrderedDescending : NSOrderedAscending;}
+                                         CGFloat y1 = CGRectGetMaxY(obj1.absRect); CGFloat x1 = CGRectGetMinX(obj1.absRect);
+                                         CGFloat y2 = CGRectGetMaxY(obj2.absRect); CGFloat x2 = CGRectGetMinX(obj2.absRect);
+                                         if (y1 == y2) {
+                                             return x1 <= x2 ? NSOrderedDescending : NSOrderedAscending;
+                                         } else {
+                                             return y1 < y2 ? NSOrderedDescending : NSOrderedAscending;
+                                         }
+                                     }
                                      ] mutableCopy];
     }
     
@@ -337,6 +360,7 @@ static char kAssociatedObjectKeyReuseIdentifier;
 @end
 
 
+#pragma mark - LSVRectModel
 
 @implementation LSVRectModel
 

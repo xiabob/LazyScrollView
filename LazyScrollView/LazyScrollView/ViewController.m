@@ -24,7 +24,7 @@
     [super loadView];
     
     [self loadDatas];
-    [self setupUI];
+    [self configViews];
 }
 
 - (void)viewDidLoad {
@@ -32,7 +32,47 @@
     // Do any additional setup after loading the view, typically from a nib.
 }
 
-- (void)setupUI {
+- (void)loadDatas {
+    
+    NSMutableArray *array = @[].mutableCopy;
+    NSMutableDictionary *dictionary = @{}.mutableCopy;
+    
+    NSMutableArray *rectArray  = [[NSMutableArray alloc] init];
+    //Create a single column layout with 5 elements;
+    for (int i = 0; i < 500 ; i++) {
+        [rectArray addObject:[NSValue valueWithCGRect:CGRectMake(10, i *80 + 2 , self.view.bounds.size.width-20, 80-2)]];
+    }
+    //Create a double column layout with 10 elements;
+    for (int i = 0; i < 1000 ; i++) {
+        [rectArray addObject:[NSValue valueWithCGRect:CGRectMake((i%2)*self.view.bounds.size.width/2 + 3, 41000 + i/2 *80 + 2 , self.view.bounds.size.width/2 -3, 80 - 2)]];
+    }
+    //Create a trible column layout with 15 elements;
+    for (int i = 0; i < 1500 ; i++) {
+        NSUInteger row = 5;
+        [rectArray addObject:[NSValue valueWithCGRect:CGRectMake((i%row)*self.view.bounds.size.width/row + 1, 82000 + i/row *80 + 2 , self.view.bounds.size.width/row -4, 80 - 2)]];
+    }
+    
+    for (NSInteger index = 0; index < rectArray.count; ++ index) {
+        NSString *lsvId = [NSString stringWithFormat:@"%@/%@", @(index / 10), @(index % 10)];
+        LSVRectModel *model = [LSVRectModel modelWithRect:[(NSValue *)(rectArray[index]) CGRectValue] lsvId:lsvId];
+        [array addObject:model];
+        [dictionary setObject:lsvId forKey:lsvId];
+    }
+    
+    
+    //    for (NSInteger index = 0; index < 5000; ++ index) {
+    //        NSString *lsvId = [NSString stringWithFormat:@"%@/%@", @(index / 10), @(index % 10)];
+    //        CGFloat width = ([UIScreen mainScreen].bounds.size.width - 30) / 2;
+    //        LSVRectModel *model = [LSVRectModel modelWithRect:CGRectMake(10 + (index % 2) * (width+10), (index / 2) * (width+10), width, width) lsvId:lsvId];
+    //        [array addObject:model];
+    //        [dictionary setObject:lsvId forKey:lsvId];
+    //    }
+    self.rectDatas = array;
+    self.viewsData = dictionary;
+    
+}
+
+- (void)configViews {
     
     self.view.backgroundColor = [UIColor whiteColor];
     
@@ -45,6 +85,8 @@
     [super didReceiveMemoryWarning];
     // Dispose of any resources that can be recreated.
 }
+
+#pragma mark - LazyScrollViewDataSource
 
 - (NSUInteger)numberOfItemInScrollView:(LazyScrollView *)scrollView {
     return self.rectDatas.count;
@@ -78,24 +120,12 @@
     return view;
 }
 
-- (void)scrollView:(LazyScrollView *)scrollView didClickItemAtIndex:(NSUInteger)index {
-    NSLog(@"didClickItemAtIndex:%@", @(index));
-}
+#pragma mark - LazyScrollViewDelegate
 
-- (void)loadDatas {
-    
-    NSMutableArray *array = @[].mutableCopy;
-    NSMutableDictionary *dictionary = @{}.mutableCopy;
-    for (NSInteger index = 0; index < 5000; ++ index) {
-        NSString *lsvId = [NSString stringWithFormat:@"%@/%@", @(index / 10), @(index % 10)];
-        CGFloat width = ([UIScreen mainScreen].bounds.size.width - 30) / 2;
-        LSVRectModel *model = [LSVRectModel modelWithRect:CGRectMake(10 + (index % 2) * (width+10), (index / 2) * (width+10), width, width) lsvId:lsvId];
-        [array addObject:model];
-        [dictionary setObject:lsvId forKey:lsvId];
-    }
-    self.rectDatas = array;
-    self.viewsData = dictionary;
-    
+- (void)scrollView:(LazyScrollView *)scrollView didClickItemAtIndex:(NSUInteger)index withLsvId:(NSString *)lsvId {
+    SingleView *view = (SingleView *)[self scrollView:scrollView itemByLsvId:lsvId];
+    NSLog(@"didClickItemAtIndex:%@ lsvid:%@ view data:%@", @(index), lsvId, view.data);
+    [scrollView reloadData];
 }
 
 

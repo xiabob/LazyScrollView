@@ -21,11 +21,11 @@ typedef NS_ENUM(NSUInteger, LazyScrollViewDirection) {
 @protocol LazyScrollViewDataSource <NSObject>
 
 @required
-// ScrollView一共展示多少个item
+/// ScrollView一共展示多少个item
 - (NSUInteger)numberOfItemInScrollView:(LazyScrollView *)scrollView;
-// 要求根据index直接返回RectModel
+/// 要求根据index直接返回RectModel
 - (LSVRectModel *)scrollView:(LazyScrollView *)scrollView rectModelAtIndex:(NSUInteger)index;
-// 返回下标所对应的view
+/// 返回下标所对应的view
 - (UIView *)scrollView:(LazyScrollView *)scrollView itemByLsvId:(NSString *)lsvId;
 
 @end
@@ -35,7 +35,8 @@ typedef NS_ENUM(NSUInteger, LazyScrollViewDirection) {
 @protocol LazyScrollViewDelegate<UIScrollViewDelegate>
 
 @optional
-- (void)scrollView:(LazyScrollView *)scrollView didClickItemAtIndex:(NSUInteger)index;
+///点击了对应小标的cell
+- (void)scrollView:(LazyScrollView *)scrollView didClickItemAtIndex:(NSUInteger)index withLsvId:(NSString *)lsvId;
 
 @end
 
@@ -63,10 +64,10 @@ typedef NS_ENUM(NSUInteger, LazyScrollViewDirection) {
 #pragma mark - LSVRectModel
 
 @interface LSVRectModel : NSObject
-// view转换后的绝对值rect
+/// view转换后的绝对值rect
 @property (nonatomic, assign) CGRect absRect;
 
-// 业务下标，如果初始化时没有提供，LSVRectModel内部会自动生成
+/// 业务下标，如果初始化时没有提供，LSVRectModel内部会自动生成
 @property (nonatomic, copy) NSString *lsvId;
 
 + (instancetype)modelWithRect:(CGRect)rect;
