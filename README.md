@@ -4,11 +4,7 @@ iOS 高性能异构滚动视图构建方案 —— LazyScrollView
 ##思路来源
 * [苹果核 - iOS 高性能异构滚动视图构建方案 —— LazyScrollView](http://pingguohe.net/2016/01/31/lazyscroll.html)
 
-* https://github.com/HistoryZhang/LazyScrollView
-
-~~因为原文并没有提供相关demo，而HistoryZhang的实现还有部分不满足我的需求，所以打算在他们的基础上自己再造个轮子。目前经过Instruments测试，性能已经能够满足日常使用了（但可优化的空间还有很多！）。~~
-
-已开源https://github.com/alibaba/LazyScrollView
+已开源https://github.com/alibaba/LazyScrollView 但是当view数目超过1000以上时，还是有问题
 
 ##使用
 
